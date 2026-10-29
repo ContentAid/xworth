@@ -2,7 +2,8 @@
 import json, os, re, sys, time, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-cfg = open(os.path.expanduser('~/xworth/config.js')).read()
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root, above bench/
+cfg = open(os.path.join(ROOT, 'config.js')).read()
 KEY = re.search(r"KEY = '([^']+)'", cfg).group(1)
 INSTR = ' '.join(re.findall(r"'((?:[^'\\]|\\.)*)'", cfg.split('instructions:')[1].split('criteria:')[0])).replace("\\'", "'")
 LEVELS = re.findall(r"'([^']+)'", cfg.split('criteria: [')[1].split(']')[0])

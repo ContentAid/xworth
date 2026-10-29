@@ -39,7 +39,25 @@ function scan() {
   }
 }
 
+// Feed lock: Following only. Selectors skip aria-labels so they hold in any UI language:
+// For you is always the first home tab, and every sidebar section/aside is trends, who to
+// follow or Premium upsell (search is a form outside them), plus the news card. The :has rules hide
+// the bordered card around them; a wider rule (any div above a section) also took search.
+if (FEED_LOCK) document.documentElement.append(Object.assign(document.createElement('style'), {
+  textContent: `html.xw-home [data-testid="primaryColumn"] [role="tablist"] > [role="presentation"]:first-child,
+    [data-testid="sidebarColumn"] :is(section, aside),
+    [data-testid="sidebarColumn"] div:is(:has(> [data-testid="news_sidebar"]), :has(> div > aside)) { display: none !important; }`,
+}));
+
+function lock() {
+  if (!FEED_LOCK) return;
+  document.documentElement.classList.toggle('xw-home', location.pathname === '/home');
+  const tabs = document.querySelectorAll('html.xw-home [data-testid="primaryColumn"] [role="tablist"] [role="tab"]');
+  if (tabs[0]?.getAttribute('aria-selected') === 'true') tabs[1]?.click(); // X remembers the choice
+}
+
 let t = 0;
-new MutationObserver(() => { t ||= setTimeout(() => { t = 0; scan(); }, 300); })
+new MutationObserver(() => { t ||= setTimeout(() => { t = 0; lock(); scan(); }, 300); })
   .observe(document.body, { childList: true, subtree: true });
+lock();
 scan();

@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "X Worth",
-  "version": "0.3",
-  "description": "Tints X posts red to green by how much time they are worth (local model or Jev).",
+  "version": "0.4",
+  "description": "Tints X posts red to green by how much time they are worth (local model or Jev), and locks the feed to Following.",
   "host_permissions": ["http://127.0.0.1:11434/*", "http://127.0.0.1:8089/*", "https://api.typesafe.ai/*"],
   "background": { "service_worker": "background.js" },
-  "content_scripts": [{ "matches": ["https://x.com/*"], "js": ["content.js"] }]
+  "content_scripts": [{ "matches": ["https://x.com/*"], "js": ["config.js", "content.js"] }]
 }

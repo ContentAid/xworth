@@ -1,39 +1,46 @@
 # xworth
 
-Tints each X post red to green by how much of your time it is worth.
+A Chrome extension that colors each X post red to green by how much of your time it is worth, and locks the home feed to people you follow.
 
 ![screenshot](docs/screenshot.png)
 
 ## Why
 
-A timeline of ragebait, memes, and hot takes costs time and gives little back. xworth scores every post for usefulness to the reader and colors it, so the good posts stand out while scrolling.
+Summaries of a feed lose the posts that mattered, and no model reads a whole timeline for you. So xworth leaves every post in place and paints it: red is ragebait, memes and hot takes, green is something you can learn from or use today. You still scroll, but you know where to slow down.
 
-The method carries over to lead scoring: an LLM judge labels a few hundred examples, then a small embedding model plus a linear head learns to copy it and runs locally for almost nothing.
+The second half is the feed lock. The For you tab, Trending, Who to follow and the news card are hidden, and home opens on Following. You only see the people you chose.
 
 ## How it works
 
-- An LLM judge scores each post 0 to 4 across five worth levels, from Waste to Great.
-- Three engines: jev (TypeSafe API), local (Qwen3.5-9B on llama-server), and small (EmbeddingGemma plus a ridge head distilled from Jev scores).
-- The local engine takes the expected level over the digit logprobs, so the score is smooth from 0 to 1.
-- The small engine embeds the post and runs a ridge head stored in head.json.
-- A score of 0 paints red, the top level paints green. Paint is keyed by post id so recycled nodes repaint correctly.
-- Score levels and instructions live in config.js. Editing them means retraining the small head.
+- Each post's visible text goes to a judge that scores it 0 to 4, from Waste to Great. The levels and the reader profile live in `config.js`.
+- Three engines:
+  - `small` (default): EmbeddingGemma on Ollama plus a ridge head in `head.json`, distilled from Jev's scores. About 20 ms per post.
+  - `local`: Qwen3.5-9B on llama-server. The score is the expected level over the digit logprobs, so it is smooth from 0 to 1. About 0.1 s per post.
+  - `jev`: the TypeSafe Jev API. Needs a key.
+- 0 paints red, the top level paints green. Paint is keyed by post id, because X recycles post nodes while you scroll.
+- The feed lock is plain CSS plus one click on the Following tab. It uses no English labels, so it works with X in any language.
 
 ## Results
 
-- On 45 held-out posts labelled by Claude as a reference: Spearman 0.86 (Jev), 0.82 (Qwen3.5-9B), 0.74 (small).
-- The small head trained on 336 posts.
-- Small engine runs at ~20 ms per post. Local engine runs at 0.1s per post.
-
-## Stack
-
-JavaScript, Chrome Manifest V3, Ollama EmbeddingGemma, llama.cpp Qwen3.5-9B, TypeSafe Jev API, Python
+On 45 held-out posts labelled by Claude as a reference, Spearman correlation was 0.86 for Jev, 0.82 for Qwen3.5-9B and 0.74 for the small engine. The small head trained on 336 posts.
 
 ## Run it
 
-- Copy `config.example.js` to `config.js` and pick an `ENGINE` (`small`, `local`, or `jev`).
-- For `jev`, set `KEY` in config.js. For `small`, run Ollama with `embeddinggemma` and set `OLLAMA_ORIGINS=chrome-extension://*`.
-- Load the folder unpacked in Chrome or Brave. Reload the extension after editing config.js.
-- Rebuild the small head after editing WORTH: delete `bench/labels.jsonl` and run `python distill.py --write` from `bench/` (needs numpy, scikit-learn, scipy; expects the repo at `~/xworth`).
-- Bench scripts: harvest.mjs harvests posts from handles.txt, bench.py scores, distill.py trains, score.py and parity.js check results.
-- Bench data files are not included: `harvest.jsonl` (harvest.mjs rebuilds it from the public profiles in handles.txt), `labels.jsonl` (distill.py rebuilds it with Jev) and `posts.json` (the 45-post test set).
+1. Copy `config.example.js` to `config.js`.
+2. Edit `WORTH.instructions` to describe you. The default reader is a freelancer building AI automations, so the colors follow that taste.
+3. Pick an `ENGINE`:
+   - `small`: run Ollama with `embeddinggemma` and `OLLAMA_ORIGINS=chrome-extension://*`.
+   - `local`: run llama-server on port 8089 with a chat model.
+   - `jev`: set `KEY`.
+4. Set `FEED_LOCK = false` if you want X's layout left alone.
+5. Open `chrome://extensions`, turn on Developer mode, click Load unpacked and pick this folder. Works in Chrome and Brave. Reload the extension after editing `config.js`.
+
+## Retraining the small engine
+
+The small head learned the default levels and reader. After you change `WORTH`, delete `bench/labels.jsonl` and run `python distill.py --write` from `bench/`. It re-labels with Jev, so it needs a key, plus numpy, scikit-learn and scipy.
+
+Other bench scripts: `harvest.mjs` collects posts from the public profiles in `handles.txt`, `bench.py` scores them, and `score.py` and `parity.js` check results. The data files (`harvest.jsonl`, `labels.jsonl`, `posts.json`) are not in the repo. `harvest.mjs` and `distill.py` rebuild the first two.
+
+## Stack
+
+JavaScript (Chrome Manifest V3), Ollama EmbeddingGemma, llama.cpp, TypeSafe Jev, Python.

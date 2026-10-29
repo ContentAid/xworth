@@ -1,6 +1,6 @@
 """Distil Jev's worth score into EmbeddingGemma + ridge regression (void router pattern).
 Train: harvest.jsonl posts labelled by Jev (cached in labels.jsonl). Test: the 45 hand-labelled posts
-in posts.json/ref.json, never trained on. Writes ~/xworth/head.json for the extension.
+in posts.json/ref.json, never trained on. Writes head.json in the repo root for the extension.
 Run with ~/.local/share/void/venv/bin/python (numpy + sklearn)."""
 import json, os, re, sys, urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -10,7 +10,8 @@ from sklearn.model_selection import cross_val_predict
 from scipy.stats import spearmanr
 
 EMB, PREFIX = 'embeddinggemma', 'task: classification | query: '
-cfg = open(os.path.expanduser('~/xworth/config.js')).read()
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root, above bench/
+cfg = open(os.path.join(ROOT, 'config.js')).read()
 KEY = re.search(r"KEY = '([^']+)'", cfg).group(1)
 INSTR = ' '.join(re.findall(r"'((?:[^'\\]|\\.)*)'", cfg.split('instructions:')[1].split('criteria:')[0])).replace("\\'", "'")
 LEVELS = re.findall(r"'([^']+)'", cfg.split('criteria: [')[1].split(']')[0])
@@ -64,5 +65,5 @@ if '--write' in sys.argv:
     lo, hi = np.percentile(cv, [5, 95])
     json.dump({'model': EMB, 'prefix': PREFIX, 'b': round(float(m.intercept_), 6), 'lo': round(float(lo), 4), 'hi': round(float(hi), 4),
                'w': np.round(m.coef_, 6).tolist()},
-              open(os.path.expanduser('~/xworth/head.json'), 'w'))
-    print('wrote ~/xworth/head.json')
+              open(os.path.join(ROOT, 'head.json'), 'w'))
+    print('wrote', os.path.join(ROOT, 'head.json'))

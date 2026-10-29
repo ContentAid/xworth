@@ -1,5 +1,5 @@
 // background.js small() in Node vs distill.py predictions on the same 45 posts.
-const fs = require('fs'), path = require('path'), ext = path.join(process.env.HOME, 'xworth');
+const fs = require('fs'), path = require('path'), ext = path.join(__dirname, '..');
 let handler;
 globalThis.chrome = { runtime: { onMessage: { addListener: f => (handler = f) },
   getURL: f => 'data:application/json,' + encodeURIComponent(fs.readFileSync(path.join(ext, f), 'utf8')) } };

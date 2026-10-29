@@ -2,12 +2,16 @@
 // 'local' = Qwen3.5-9B on void-llm.service (0.1s/post, ~6 GB VRAM; 0.82). 'jev' = TypeSafe API (0.86).
 const ENGINE = 'small';
 
+// true hides the For you tab (opens Following instead) and the Trending, Who to follow and
+// Premium boxes in the sidebar. false leaves X's layout alone and only colors posts.
+const FEED_LOCK = true;
+
 // TypeSafe key, only used when ENGINE is 'jev' (copied from ~/.config/typesafe/env). Never commit this file.
 const KEY = ''; // TypeSafe API key, only for ENGINE 'jev'
 
 // What "worth my time" means. Edit the levels, then reload the extension.
 // 'small' engine learned the old levels: after editing, delete bench/labels.jsonl and run
-// `cd ~/xworth/bench && ~/.local/share/void/venv/bin/python distill.py --write` (re-labels with Jev).
+// `cd bench && python distill.py --write` (re-labels with Jev).
 // Score 0 paints red, the top level paints green.
 const WORTH = {
   type: 'score',
